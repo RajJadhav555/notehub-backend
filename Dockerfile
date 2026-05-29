@@ -7,6 +7,7 @@ FROM node:22-alpine
 RUN apk add --no-cache curl
 
 WORKDIR /app
+ENV PORT=7860
 
 # Copy package files first (layer caching)
 COPY package.json ./
