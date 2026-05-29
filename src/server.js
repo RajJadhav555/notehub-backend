@@ -15,6 +15,9 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxies (Hugging Face / Render)
+app.set('trust proxy', 1);
+
 // Log startup info
 console.log('\nStarting NoteHub Backend...');
 console.log('NODE_ENV:', process.env.NODE_ENV || 'development');
