@@ -103,20 +103,22 @@ async function runMigrations() {
   }
 
   const columns = [
-    { name: 'file_hash', type: 'TEXT' },
-    { name: 'thumbnail_url', type: 'TEXT' },
-    { name: 'course', type: 'TEXT' },
-    { name: 'year', type: 'TEXT' },
-    { name: 'plagiarism_score', type: 'INTEGER' },
-    { name: 'plagiarism_details', type: 'TEXT' }
+    { name: 'file_hash', type: 'TEXT', table: 'notes' },
+    { name: 'thumbnail_url', type: 'TEXT', table: 'notes' },
+    { name: 'course', type: 'TEXT', table: 'notes' },
+    { name: 'year', type: 'TEXT', table: 'notes' },
+    { name: 'plagiarism_score', type: 'INTEGER', table: 'notes' },
+    { name: 'plagiarism_details', type: 'TEXT', table: 'notes' },
+    { name: 'last_seen', type: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', table: 'users' },
+    { name: 'is_verified', type: 'BOOLEAN DEFAULT false', table: 'users' }
   ];
 
   for (const col of columns) {
     try {
-      await pool.query(`ALTER TABLE notes ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
-      console.log(`✅ Column ${col.name} is ready.`);
+      await pool.query(`ALTER TABLE ${col.table} ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
+      console.log(`✅ Column ${col.name} is ready in ${col.table}.`);
     } catch (err) {
-      console.warn(`⚠️ Error adding column ${col.name}:`, err.message);
+      console.warn(`⚠️ Error adding column ${col.name} to ${col.table}:`, err.message);
     }
   }
 
