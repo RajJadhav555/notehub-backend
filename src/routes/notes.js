@@ -28,6 +28,7 @@ const plagiarismCheckLimiter = rateLimit
         windowMs: 60 * 60 * 1000, // 1 hour window
         max: 10,                   // limit each user to 10 checks per hour
         keyGenerator: (req) => req.user?.id || req.ip,
+        validate: { keygenerator: false },
         message: { error: 'Too many plagiarism checks. Please try again in an hour.' },
         standardHeaders: true,
         legacyHeaders: false,

@@ -1,7 +1,7 @@
 # ================================
 # NoteHub Backend Dockerfile
 # ================================
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Install curl (needed for healthcheck) and other tools
 RUN apk add --no-cache curl
