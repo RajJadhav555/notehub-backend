@@ -9,8 +9,8 @@ RUN apk add --no-cache curl
 WORKDIR /app
 
 # Copy package files first (layer caching)
-COPY package.json package-lock.json ./
-RUN npm ci --only=production --silent
+COPY package.json ./
+RUN npm install --omit=dev
 
 # Copy all source files
 COPY . .
