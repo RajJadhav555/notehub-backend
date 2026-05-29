@@ -1,0 +1,45 @@
+{
+  "name": "notehub-backend",
+  "version": "1.0.0",
+  "description": "NoteHub Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.90.1",
+    "bcryptjs": "^2.4.3",
+    "bottleneck": "^2.19.5",
+    "cloudinary": "^2.8.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.3.1",
+    "google-auth-library": "^10.5.0",
+    "helmet": "^8.1.0",
+    "jimp": "^1.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "leo-profanity": "^1.9.0",
+    "lru-cache": "^11.2.7",
+    "mammoth": "^1.12.0",
+    "multer": "^1.4.5-lts.1",
+    "natural": "^8.1.1",
+    "obscenity": "^0.4.6",
+    "officeparser": "^6.0.4",
+    "openai": "^6.21.0",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.10.0",
+    "simhash-js": "^1.0.0",
+    "socket.io": "^4.8.3",
+    "streamifier": "^0.1.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "xxhashjs": "^0.2.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
