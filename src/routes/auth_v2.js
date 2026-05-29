@@ -191,7 +191,7 @@ router.post('/google', validate(googleAuthSchema), async (req, res) => {
     // Create a simple session token (JWT) for our app
     const sessionToken = jwt.sign(
       { id: user.id, email: user.email, name: user.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'notehub_default_secret_key_2026',
       { expiresIn: '24h' }
     );
 
@@ -221,7 +221,7 @@ router.post('/google', validate(googleAuthSchema), async (req, res) => {
 
   } catch (error) {
     console.error('Auth error:', error);
-    res.status(500).json({ error: 'Authentication failed. Please try again.' });
+    res.status(500).json({ error: 'Auth failed: ' + error.message });
   }
 });
 
@@ -276,7 +276,7 @@ router.post('/signup', validate(signupSchema), async (req, res) => {
     // Create JWT token
     const sessionToken = jwt.sign(
       { id: user.id, email: user.email, name: user.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'notehub_default_secret_key_2026',
       { expiresIn: '24h' }
     );
     
@@ -303,7 +303,7 @@ router.post('/signup', validate(signupSchema), async (req, res) => {
     
   } catch (error) {
     console.error('Signup error:', error.message);
-    res.status(500).json({ error: 'Signup failed. Please try again.' });
+    res.status(500).json({ error: 'Signup failed: ' + error.message });
   }
 });
 
@@ -353,7 +353,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     // Create JWT token
     const sessionToken = jwt.sign(
       { id: user.id, email: user.email, name: user.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'notehub_default_secret_key_2026',
       { expiresIn: '24h' }
     );
     
@@ -380,7 +380,7 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed. Please try again.' });
+    res.status(500).json({ error: 'Login failed: ' + error.message });
   }
 });
 

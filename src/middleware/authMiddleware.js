@@ -14,7 +14,7 @@ const requireAuth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'notehub_default_secret_key_2026');
     req.user = decoded; // { id, email, name, iat, exp }
     next();
   } catch (err) {
@@ -41,7 +41,7 @@ const optionalAuth = (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'notehub_default_secret_key_2026');
     req.user = decoded;
   } catch (err) {
     req.user = null;
