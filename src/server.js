@@ -109,6 +109,9 @@ async function runMigrations() {
     { name: 'year', type: 'TEXT', table: 'notes' },
     { name: 'plagiarism_score', type: 'INTEGER', table: 'notes' },
     { name: 'plagiarism_details', type: 'TEXT', table: 'notes' },
+    { name: 'verification_status', type: 'VARCHAR(50) DEFAULT \'pending\'', table: 'notes' },
+    { name: 'ai_verification_score', type: 'INTEGER', table: 'notes' },
+    { name: 'verification_details', type: 'TEXT', table: 'notes' },
     { name: 'last_seen', type: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP', table: 'users' },
     { name: 'is_verified', type: 'BOOLEAN DEFAULT false', table: 'users' }
   ];
