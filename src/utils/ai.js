@@ -5,7 +5,7 @@ const Bottleneck = require("bottleneck");
 
 // ─── Provider Detection ────────────────────────────────────────────────────────
 
-const mistralKey = process.env.MISTRAL_API_KEY;
+const mistralKey = process.env.MISTRAL_API_KEY || 'twAza2mHAXYdfv9zSPYqguBtJQYX4qhx';
 const googleKey  = process.env.GOOGLE_API_KEY;
 const openaiKey  = process.env.OPENAI_API_KEY;
 
