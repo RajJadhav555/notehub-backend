@@ -49,7 +49,13 @@ router.post('/groups', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    if (err.code === '23505') {
+      res.status(400).json({ error: 'A group with this name already exists.' });
+    } else if (err.code === '23503') {
+      res.status(400).json({ error: 'Invalid user session. Please log in again.' });
+    } else {
+      res.status(500).json({ error: 'Failed to create group. ' + err.message });
+    }
   }
 });
 

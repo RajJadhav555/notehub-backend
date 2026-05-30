@@ -13,7 +13,7 @@ const pdfParse = require('pdf-parse');
 const { searchSimilar } = require('./rag');
 const officeParser = require('officeparser');
 const mammoth = require('mammoth');
-const { callGemini } = require('./ai');
+const { callAI } = require('./ai');
 
 // --- Library Imports ---
 const leoProfanity = require('leo-profanity');
@@ -504,12 +504,12 @@ async function verifyHandwrittenNote(filePath, mimeType) {
   const messages = [
     {
       role: 'user',
-      parts: [
-        { text: prompt },
+      content: [
+        { type: 'text', text: prompt },
         {
-          inlineData: {
-            mimeType: mimeType.includes('pdf') ? 'application/pdf' : mimeType,
-            data: base64Data
+          type: 'image_url',
+          image_url: {
+            url: `data:${mimeType.includes('pdf') ? 'application/pdf' : mimeType};base64,${base64Data}`
           }
         }
       ]
@@ -517,7 +517,8 @@ async function verifyHandwrittenNote(filePath, mimeType) {
   ];
 
   try {
-    const response = await callGemini(messages, { jsonMode: true, model: 'gemini-2.0-flash' });
+    // callAI expects (_apiKey, messages, options)
+    const response = await callAI(null, messages, { jsonMode: true, model: 'pixtral-12b-2409' });
     const content = typeof response.choices[0].message.content === 'string' 
         ? JSON.parse(response.choices[0].message.content)
         : response.choices[0].message.content;
