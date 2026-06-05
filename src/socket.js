@@ -5,6 +5,8 @@ let io;
 const activeUsers = new Map();
 // Track active voice sessions: groupId -> Map<socketId, { userName, userId }>
 const activeVoiceSessions = new Map();
+// Track active video sessions: groupId -> Map<socketId, { userName, userId }>
+const activeVideoSessions = new Map();
 
 const initSocket = (server) => {
   const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
@@ -195,6 +197,66 @@ const initSocket = (server) => {
             });
         }
     });
+
+    // --- Video Call Tracking for Groups ---
+    const broadcastVideoCallStatus = (groupId, groupName) => {
+        const key = String(groupId);
+        const session = activeVideoSessions.get(key);
+        if (session && session.size > 0) {
+            const participants = Array.from(session.values());
+            io.to(groupName).emit("group_video_active", {
+                groupId: key,
+                groupName,
+                participants
+            });
+        } else {
+            io.to(groupName).emit("group_video_ended", { groupId: key, groupName });
+            activeVideoSessions.delete(key);
+        }
+    };
+
+    socket.on("join_group_video", (data) => {
+        // data: { groupId, userId, userName, groupName }
+        socket._videoGroupId = String(data.groupId);
+        socket._videoGroupName = data.groupName;
+        
+        const key = String(data.groupId);
+        if (!activeVideoSessions.has(key)) {
+            activeVideoSessions.set(key, new Map());
+        }
+        activeVideoSessions.get(key).set(socket.id, {
+            userName: data.userName,
+            userId: data.userId
+        });
+        broadcastVideoCallStatus(key, data.groupName);
+    });
+
+    socket.on("leave_group_video", (data) => {
+        // data: { groupId, groupName }
+        const key = String(data.groupId);
+        const session = activeVideoSessions.get(key);
+        if (session) {
+            session.delete(socket.id);
+            if (session.size === 0) activeVideoSessions.delete(key);
+        }
+        delete socket._videoGroupId;
+        delete socket._videoGroupName;
+        broadcastVideoCallStatus(key, data.groupName);
+    });
+
+    socket.on("check_active_video_call", (data) => {
+        // data: { groupId, groupName }
+        const key = String(data.groupId);
+        const session = activeVideoSessions.get(key);
+        if (session && session.size > 0) {
+            const participants = Array.from(session.values());
+            socket.emit("group_video_active", {
+                groupId: key,
+                groupName: data.groupName,
+                participants
+            });
+        }
+    });
     
     // Disconnect — mark user offline in DB
     socket.on("disconnect", () => {
@@ -227,6 +289,21 @@ const initSocket = (server) => {
           }
           if (voiceGroupName) {
               broadcastCallStatus(key, voiceGroupName);
+          }
+      }
+
+      // Clean up video session tracking on disconnect
+      const videoGroupId = socket._videoGroupId;
+      const videoGroupName = socket._videoGroupName;
+      if (videoGroupId) {
+          const key = String(videoGroupId);
+          const session = activeVideoSessions.get(key);
+          if (session) {
+              session.delete(socket.id);
+              if (session.size === 0) activeVideoSessions.delete(key);
+          }
+          if (videoGroupName) {
+              broadcastVideoCallStatus(key, videoGroupName);
           }
       }
       
