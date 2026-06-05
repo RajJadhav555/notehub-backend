@@ -871,8 +871,15 @@ router.get("/file/:filename", (req, res) => {
   };
   
   // 1. Check Local
-  // 1. Check Local
-  const localPath = path.join(uploadsDir, filename);
+  let localPath = path.join(uploadsDir, filename);
+  if (!fs.existsSync(localPath)) {
+      // Check if it's a seeded asset
+      const assetPath = path.join(__dirname, '../assets', filename);
+      if (fs.existsSync(assetPath)) {
+          localPath = assetPath;
+      }
+  }
+
   if (fs.existsSync(localPath)) {
       // Auto-detect if we should serve inline based on extension
       const ext = path.extname(filename).toLowerCase();
