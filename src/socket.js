@@ -288,6 +288,7 @@ const initSocket = (server) => {
             phase: 'study', // 'study' or 'break'
             groupName: data.groupName,
             startedBy: data.userName || 'Someone',
+            isStrict: data.isStrict || false,
             intervalId: null
         };
 
@@ -313,7 +314,8 @@ const initSocket = (server) => {
                                 groupId: key,
                                 timeLeft: session.timeLeft,
                                 phase: session.phase,
-                                isRunning: session.isRunning
+                                isRunning: session.isRunning,
+                                isStrict: session.isStrict
                             });
                         }
                     }, 1000);
@@ -327,17 +329,19 @@ const initSocket = (server) => {
                 timeLeft: session.timeLeft,
                 duration: session.duration,
                 phase: session.phase,
-                isRunning: session.isRunning
+                isRunning: session.isRunning,
+                isStrict: session.isStrict
             });
         }, 1000);
 
         activePomodoroSessions.set(key, session);
         io.to(data.groupName).emit("group_pomodoro_started", {
             groupId: key,
-            duration: durationSecs,
-            timeLeft: durationSecs,
-            phase: 'study',
-            startedBy: session.startedBy
+            duration: session.duration,
+            timeLeft: session.timeLeft,
+            phase: session.phase,
+            startedBy: session.startedBy,
+            isStrict: session.isStrict
         });
     });
 
@@ -360,7 +364,8 @@ const initSocket = (server) => {
                 timeLeft: session.timeLeft,
                 duration: session.duration,
                 phase: session.phase,
-                isRunning: session.isRunning
+                isRunning: session.isRunning,
+                isStrict: session.isStrict
             });
         }
     });
