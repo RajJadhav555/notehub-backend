@@ -18,6 +18,7 @@ router.get('/', async (req, res) => {
            WHERE verified = true
            GROUP BY uploader_id
          ) note_counts ON u.id = note_counts.uploader_id
+         WHERE u.last_seen >= CURRENT_DATE
        )
        SELECT department, 
               CASE WHEN COUNT(id) > 0 THEN SUM(points)::numeric / COUNT(id) ELSE 0 END as avg_pts
@@ -57,6 +58,7 @@ router.get('/', async (req, res) => {
            WHERE verified = true
            GROUP BY uploader_id
        ) note_counts ON l.user_id = note_counts.uploader_id
+       WHERE u.last_seen >= CURRENT_DATE
        ORDER BY points DESC, l.name ASC LIMIT 50`,
       [winningDept]
     );
@@ -87,6 +89,7 @@ router.get('/department-war', async (req, res) => {
            WHERE verified = true
            GROUP BY uploader_id
          ) note_counts ON u.id = note_counts.uploader_id
+         WHERE u.last_seen >= CURRENT_DATE
        )
        SELECT 
          department,
