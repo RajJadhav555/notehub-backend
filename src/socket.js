@@ -2,6 +2,7 @@ const { Server } = require("socket.io");
 const pool = require('./db');
 
 let io;
+const activeUsers = new Map();
 
 const initSocket = (server) => {
   const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
@@ -21,6 +22,9 @@ const initSocket = (server) => {
 
     // Mark user online in DB when they connect via socket
     if (userId && userId !== 'undefined') {
+      const currentCount = activeUsers.get(userId) || 0;
+      activeUsers.set(userId, currentCount + 1);
+
       pool.query('UPDATE users SET last_seen = NOW() WHERE id = $1', [userId])
         .then(() => {
           // Broadcast to all clients that someone's status changed
@@ -154,11 +158,20 @@ const initSocket = (server) => {
     socket.on("disconnect", () => {
       console.log("User disconnected", socket.id, "(userId:", userId, ")");
       if (userId && userId !== 'undefined') {
-        pool.query("UPDATE users SET last_seen = NOW() - INTERVAL '5 minutes' WHERE id = $1", [userId])
-          .then(() => {
-            io.emit("online_status_changed", { userId, status: 'offline' });
-          })
-          .catch(err => console.error('Failed to update last_seen on disconnect:', err.message));
+        const currentCount = activeUsers.get(userId) || 0;
+        const newCount = Math.max(0, currentCount - 1);
+        activeUsers.set(userId, newCount);
+
+        // Wait 5 seconds before marking offline, allowing for page reloads or other tabs
+        setTimeout(() => {
+          if (activeUsers.get(userId) === 0) {
+            pool.query("UPDATE users SET last_seen = NOW() - INTERVAL '5 minutes' WHERE id = $1", [userId])
+              .then(() => {
+                io.emit("online_status_changed", { userId, status: 'offline' });
+              })
+              .catch(err => console.error('Failed to update last_seen on disconnect:', err.message));
+          }
+        }, 5000);
       }
       // Broadcast disconnect for WebRTC Mesh teardown
       socket.broadcast.emit("group_voice_user_left", { socketId: socket.id });
