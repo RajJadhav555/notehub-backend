@@ -93,6 +93,34 @@ const initSocket = (server) => {
         console.log(`❌ Focus Link broken in ${data.room} by ${data.user}: ${data.reason}`);
         io.to(data.room).emit("focus_link_broken", data);
     });
+
+    // --- Group Voice Calling (WebRTC Mesh) ---
+    socket.on("join_group_voice", (data) => {
+        // data: { groupId, userId, userName }
+        const room = `voice_${data.groupId}`;
+        socket.join(room);
+        socket.to(room).emit("group_voice_user_joined", { 
+            socketId: socket.id, 
+            userId: data.userId, 
+            userName: data.userName 
+        });
+    });
+
+    socket.on("group_voice_signal", (data) => {
+        // data: { targetSocketId, callerSocketId, signal, callerName, userId }
+        io.to(data.targetSocketId).emit("group_voice_signal_receive", {
+            callerSocketId: data.callerSocketId,
+            signal: data.signal,
+            callerName: data.callerName,
+            userId: data.userId
+        });
+    });
+
+    socket.on("leave_group_voice", (data) => {
+        const room = `voice_${data.groupId}`;
+        socket.leave(room);
+        socket.to(room).emit("group_voice_user_left", { socketId: socket.id });
+    });
     
     // Disconnect — mark user offline in DB
     socket.on("disconnect", () => {
@@ -104,6 +132,8 @@ const initSocket = (server) => {
           })
           .catch(err => console.error('Failed to update last_seen on disconnect:', err.message));
       }
+      // Broadcast disconnect for WebRTC Mesh teardown
+      socket.broadcast.emit("group_voice_user_left", { socketId: socket.id });
     });
   });
   
