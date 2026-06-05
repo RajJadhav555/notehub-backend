@@ -7,6 +7,8 @@ const activeUsers = new Map();
 const activeVoiceSessions = new Map();
 // Track active video sessions: groupId -> Map<socketId, { userName, userId }>
 const activeVideoSessions = new Map();
+// Track active Pomodoro sessions: groupId -> { duration, timeLeft, isRunning, phase, intervalId }
+const activePomodoroSessions = new Map();
 
 const initSocket = (server) => {
   const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
@@ -257,7 +259,100 @@ const initSocket = (server) => {
             });
         }
     });
-    
+
+    // --- Group Pomodoro Timer ---
+    socket.on("start_group_pomodoro", (data) => {
+        // data: { groupId, groupName, duration (in minutes, e.g. 25/45/60) }
+        const key = String(data.groupId);
+        // Clear any existing session
+        const existing = activePomodoroSessions.get(key);
+        if (existing && existing.intervalId) clearInterval(existing.intervalId);
+
+        const durationSecs = (data.duration || 25) * 60;
+        const session = {
+            duration: durationSecs,
+            timeLeft: durationSecs,
+            isRunning: true,
+            phase: 'study', // 'study' or 'break'
+            groupName: data.groupName,
+            startedBy: data.userName || 'Someone',
+            intervalId: null
+        };
+
+        session.intervalId = setInterval(() => {
+            session.timeLeft -= 1;
+            if (session.timeLeft <= 0) {
+                clearInterval(session.intervalId);
+                session.isRunning = false;
+                // Switch phase
+                if (session.phase === 'study') {
+                    session.phase = 'break';
+                    session.timeLeft = 5 * 60; // 5 minute break
+                    session.isRunning = true;
+                    session.intervalId = setInterval(() => {
+                        session.timeLeft -= 1;
+                        if (session.timeLeft <= 0) {
+                            clearInterval(session.intervalId);
+                            session.isRunning = false;
+                            activePomodoroSessions.delete(key);
+                            io.to(data.groupName).emit("group_pomodoro_ended", { groupId: key });
+                        } else {
+                            io.to(data.groupName).emit("group_pomodoro_tick", {
+                                groupId: key,
+                                timeLeft: session.timeLeft,
+                                phase: session.phase,
+                                isRunning: session.isRunning
+                            });
+                        }
+                    }, 1000);
+                } else {
+                    activePomodoroSessions.delete(key);
+                    io.to(data.groupName).emit("group_pomodoro_ended", { groupId: key });
+                }
+            }
+            io.to(data.groupName).emit("group_pomodoro_tick", {
+                groupId: key,
+                timeLeft: session.timeLeft,
+                duration: session.duration,
+                phase: session.phase,
+                isRunning: session.isRunning
+            });
+        }, 1000);
+
+        activePomodoroSessions.set(key, session);
+        io.to(data.groupName).emit("group_pomodoro_started", {
+            groupId: key,
+            duration: durationSecs,
+            timeLeft: durationSecs,
+            phase: 'study',
+            startedBy: session.startedBy
+        });
+    });
+
+    socket.on("stop_group_pomodoro", (data) => {
+        const key = String(data.groupId);
+        const session = activePomodoroSessions.get(key);
+        if (session) {
+            if (session.intervalId) clearInterval(session.intervalId);
+            activePomodoroSessions.delete(key);
+        }
+        io.to(data.groupName).emit("group_pomodoro_ended", { groupId: key });
+    });
+
+    socket.on("check_group_pomodoro", (data) => {
+        const key = String(data.groupId);
+        const session = activePomodoroSessions.get(key);
+        if (session && session.isRunning) {
+            socket.emit("group_pomodoro_tick", {
+                groupId: key,
+                timeLeft: session.timeLeft,
+                duration: session.duration,
+                phase: session.phase,
+                isRunning: session.isRunning
+            });
+        }
+    });
+
     // Disconnect — mark user offline in DB
     socket.on("disconnect", () => {
       console.log("User disconnected", socket.id, "(userId:", userId, ")");
