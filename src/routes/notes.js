@@ -843,6 +843,9 @@ router.get("/file/:filename", (req, res) => {
 
   const send404 = (msg) => {
     if (isInline) {
+        if (filename.toLowerCase().endsWith('.pdf')) {
+            return res.status(200).sendFile(path.join(__dirname, '../assets/not-found.pdf'));
+        }
         return res.status(404).send(`
             <!DOCTYPE html>
             <html>
@@ -858,7 +861,7 @@ router.get("/file/:filename", (req, res) => {
             <body>
                 <div class="icon">🔍</div>
                 <h2>Preview Unavailable</h2>
-                <p>We couldn't locate the document content on our servers. The file may have been moved or removed from storage.</p>
+                <p>We couldn't locate the document content on our servers. The file may have been moved or lost due to server restarts.</p>
                 <div class="status">404 • Not Found</div>
             </body>
             </html>
