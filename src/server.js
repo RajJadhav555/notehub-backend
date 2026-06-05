@@ -131,6 +131,26 @@ async function runMigrations() {
   } catch (err) {
     console.warn('⚠️ Error creating index:', err.message);
   }
+
+  // Create note_shingles table for plagiarism checking
+  try {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS note_shingles (
+            id SERIAL PRIMARY KEY,
+            note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+            shingle_hashes TEXT,
+            text_length INTEGER,
+            winnow_fingerprints TEXT DEFAULT NULL,
+            sentence_hashes TEXT DEFAULT NULL,
+            paragraph_fingerprints TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(note_id)
+        )
+    `);
+    console.log('✅ Table note_shingles is ready.');
+  } catch (err) {
+    console.warn('⚠️ Error creating note_shingles:', err.message);
+  }
   
   console.log('🏁 DB migration check completed.');
 }
