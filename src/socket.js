@@ -232,6 +232,7 @@ const initSocket = (server) => {
       
       // Broadcast disconnect for WebRTC Mesh teardown
       socket.broadcast.emit("group_voice_user_left", { socketId: socket.id });
+    });
   });
 
   // Heartbeat: Update last_seen = NOW() for all online users every 1 minute
