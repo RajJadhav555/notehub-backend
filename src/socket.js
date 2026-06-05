@@ -90,17 +90,18 @@ const initSocket = (server) => {
     
     // Helper: broadcast current call participants to the group chat room
     const broadcastCallStatus = (groupId, groupName) => {
-        const session = activeVoiceSessions.get(groupId);
+        const key = String(groupId);
+        const session = activeVoiceSessions.get(key);
         if (session && session.size > 0) {
             const participants = Array.from(session.values());
             io.to(groupName).emit("group_call_active", {
-                groupId,
+                groupId: key,
                 groupName,
                 participants // [{ userName, userId }, ...]
             });
         } else {
-            io.to(groupName).emit("group_call_ended", { groupId, groupName });
-            activeVoiceSessions.delete(groupId);
+            io.to(groupName).emit("group_call_ended", { groupId: key, groupName });
+            activeVoiceSessions.delete(key);
         }
     };
 
@@ -110,14 +111,15 @@ const initSocket = (server) => {
         socket.join(room);
         
         // Store groupId and groupName on the socket for disconnect cleanup
-        socket._voiceGroupId = data.groupId;
+        socket._voiceGroupId = String(data.groupId);
         socket._voiceGroupName = data.groupName;
         
+        const key = String(data.groupId);
         // Track in activeVoiceSessions
-        if (!activeVoiceSessions.has(data.groupId)) {
-            activeVoiceSessions.set(data.groupId, new Map());
+        if (!activeVoiceSessions.has(key)) {
+            activeVoiceSessions.set(key, new Map());
         }
-        activeVoiceSessions.get(data.groupId).set(socket.id, {
+        activeVoiceSessions.get(key).set(socket.id, {
             userName: data.userName,
             userId: data.userId
         });
@@ -130,7 +132,7 @@ const initSocket = (server) => {
         });
         
         // Broadcast updated call status banner to the group chat room
-        broadcastCallStatus(data.groupId, data.groupName);
+        broadcastCallStatus(key, data.groupName);
     });
 
     socket.on("group_voice_signal", (data) => {
@@ -149,10 +151,11 @@ const initSocket = (server) => {
         socket.to(room).emit("group_voice_user_left", { socketId: socket.id });
         
         // Remove from tracking
-        const session = activeVoiceSessions.get(data.groupId);
+        const key = String(data.groupId);
+        const session = activeVoiceSessions.get(key);
         if (session) {
             session.delete(socket.id);
-            if (session.size === 0) activeVoiceSessions.delete(data.groupId);
+            if (session.size === 0) activeVoiceSessions.delete(key);
         }
         
         // Clear socket voice metadata
@@ -160,7 +163,7 @@ const initSocket = (server) => {
         delete socket._voiceGroupName;
         
         // Broadcast updated status
-        broadcastCallStatus(data.groupId, data.groupName);
+        broadcastCallStatus(key, data.groupName);
     });
     
     // --- 1-on-1 Call Management ---
@@ -181,11 +184,12 @@ const initSocket = (server) => {
     // --- Check active call for a group ---
     socket.on("check_active_call", (data) => {
         // data: { groupId, groupName }
-        const session = activeVoiceSessions.get(data.groupId);
+        const key = String(data.groupId);
+        const session = activeVoiceSessions.get(key);
         if (session && session.size > 0) {
             const participants = Array.from(session.values());
             socket.emit("group_call_active", {
-                groupId: data.groupId,
+                groupId: key,
                 groupName: data.groupName,
                 participants
             });
@@ -215,13 +219,14 @@ const initSocket = (server) => {
       const voiceGroupId = socket._voiceGroupId;
       const voiceGroupName = socket._voiceGroupName;
       if (voiceGroupId) {
-          const session = activeVoiceSessions.get(voiceGroupId);
+          const key = String(voiceGroupId);
+          const session = activeVoiceSessions.get(key);
           if (session) {
               session.delete(socket.id);
-              if (session.size === 0) activeVoiceSessions.delete(voiceGroupId);
+              if (session.size === 0) activeVoiceSessions.delete(key);
           }
           if (voiceGroupName) {
-              broadcastCallStatus(voiceGroupId, voiceGroupName);
+              broadcastCallStatus(key, voiceGroupName);
           }
       }
       
