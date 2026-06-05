@@ -7,10 +7,7 @@ router.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
-    // Check Mistral key — but callAI auto-fallbacks, so just warn
-    if (!process.env.MISTRAL_API_KEY && !process.env.GOOGLE_API_KEY && !process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: "No AI API key configured. Set MISTRAL_API_KEY in .env" });
-    }
+    // callAI auto-fallbacks to default keys, so we don't need to block here.
 
     // --- Career Map Context (always available) ---
     const ENGINEERING_CAREER_MAP = `
