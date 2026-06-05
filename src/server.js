@@ -151,6 +151,24 @@ async function runMigrations() {
   } catch (err) {
     console.warn('⚠️ Error creating note_shingles:', err.message);
   }
+  // Create chat_history table for AI chatbots
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS chat_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        bot_type VARCHAR(50) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_chat_history_user_id ON chat_history(user_id)');
+    await pool.query('CREATE INDEX IF NOT EXISTS idx_chat_history_bot_type ON chat_history(bot_type)');
+    console.log('✅ Table chat_history is ready.');
+  } catch (err) {
+    console.warn('⚠️ Error creating chat_history:', err.message);
+  }
   
   console.log('🏁 DB migration check completed.');
 }
@@ -180,6 +198,9 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api/career', requireAuth, careerRouter);
 app.use('/api/scan', requireAuth, scanRouter);
 app.use('/api/notes-ai', aiLimiter, requireAuth, notesAiRouter);
+
+const chatHistoryRouter = require('./routes/chat-history');
+app.use('/api/chat-history', requireAuth, chatHistoryRouter);
 
 const pyqRouter = require('./routes/pyq');
 app.use('/api/pyq', pyqRouter);

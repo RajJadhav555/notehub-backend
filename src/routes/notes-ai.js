@@ -71,6 +71,21 @@ Detailed Content from Relevant Notes (RAG):
 ${contextString || "No specific detailed content found for this query."}
         `.trim();
         
+        // Fetch previous chat history
+        let previousMessages = [];
+        try {
+            const historyRes = await pool.query(
+                'SELECT role, content FROM chat_history WHERE user_id = $1 AND bot_type = $2 ORDER BY created_at ASC',
+                [req.user.id, 'notes']
+            );
+            previousMessages = historyRes.rows.map(row => ({
+                role: row.role === 'ai' ? 'assistant' : 'user',
+                content: row.content
+            }));
+        } catch (err) {
+            console.warn("⚠️ Failed to load chat history:", err.message);
+        }
+
         // Step 4: Prepare messages for AI
         const messages = [
             {
@@ -97,12 +112,23 @@ If the answer isn't in the context, say: "I've carefully checked the current stu
 
 Always aim to be the most helpful study partner possible.`
             },
+            ...previousMessages,
             {
                 role: "user",
                 content: message
             }
         ];
         
+        // Save user message to database
+        try {
+            await pool.query(
+                'INSERT INTO chat_history (user_id, bot_type, role, content) VALUES ($1, $2, $3, $4)',
+                [req.user.id, 'notes', 'user', message]
+            );
+        } catch (dbErr) {
+            console.error("⚠️ Failed to save user chat history:", dbErr.message);
+        }
+
         // Step 5: Call AI
         console.log("🚀 Calling AI...");
         const data = await callAI(null, messages);
@@ -118,6 +144,16 @@ Always aim to be the most helpful study partner possible.`
         const reply = data.choices[0].message.content;
         console.log(`✅ AI Response Generated (${reply.length} characters)`);
         
+        // Save AI reply to database
+        try {
+            await pool.query(
+                'INSERT INTO chat_history (user_id, bot_type, role, content) VALUES ($1, $2, $3, $4)',
+                [req.user.id, 'notes', 'ai', reply]
+            );
+        } catch (dbErr) {
+            console.error("⚠️ Failed to save AI chat history:", dbErr.message);
+        }
+
         res.json({ reply });
 
     } catch (err) {

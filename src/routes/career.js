@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { searchSimilar } = require("../utils/rag");
 const { callAI } = require("../utils/ai");
+const pool = require('../db');
 
 router.post("/chat", async (req, res) => {
   try {
@@ -62,7 +63,22 @@ router.post("/chat", async (req, res) => {
     ${contextString}
     `;
 
-    // 2. Build messages for Mistral
+    // Fetch previous chat history
+    let previousMessages = [];
+    try {
+      const historyRes = await pool.query(
+        'SELECT role, content FROM chat_history WHERE user_id = $1 AND bot_type = $2 ORDER BY created_at ASC',
+        [req.user.id, 'career']
+      );
+      previousMessages = historyRes.rows.map(row => ({
+        role: row.role === 'ai' ? 'assistant' : 'user',
+        content: row.content
+      }));
+    } catch (err) {
+      console.warn("⚠️ Failed to load chat history:", err.message);
+    }
+
+    // Build messages for Mistral
     const messages = [
       {
         role: "system",
@@ -86,11 +102,22 @@ CORE DIRECTIVES:
 
 Always be precise, actionable, and encouraging.`
       },
+      ...previousMessages,
       {
         role: "user",
         content: message
       }
     ];
+
+    // Save user message to database
+    try {
+      await pool.query(
+        'INSERT INTO chat_history (user_id, bot_type, role, content) VALUES ($1, $2, $3, $4)',
+        [req.user.id, 'career', 'user', message]
+      );
+    } catch (dbErr) {
+      console.error("⚠️ Failed to save user chat history:", dbErr.message);
+    }
 
     // 3. Call AI (Mistral → Google → OpenAI → Ollama auto-selected)
     const data = await callAI(null, messages);
@@ -100,6 +127,17 @@ Always be precise, actionable, and encouraging.`
     }
 
     const reply = data.choices[0].message.content;
+    
+    // Save AI reply to database
+    try {
+      await pool.query(
+        'INSERT INTO chat_history (user_id, bot_type, role, content) VALUES ($1, $2, $3, $4)',
+        [req.user.id, 'career', 'ai', reply]
+      );
+    } catch (dbErr) {
+      console.error("⚠️ Failed to save AI chat history:", dbErr.message);
+    }
+
     res.json({ message: reply });
 
   } catch (err) {
