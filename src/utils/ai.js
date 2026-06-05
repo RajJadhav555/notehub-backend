@@ -58,17 +58,34 @@ const limiter = new Bottleneck({
 
 async function callAI(_apiKey, messages, options = {}) {
   return limiter.schedule(async () => {
-    if (!activeProvider) {
+    // Array of available providers based on configuration
+    const availableProviders = [];
+    if (mistralConfig) availableProviders.push({ id: 'mistral', fn: callMistralAPI });
+    if (genAI) availableProviders.push({ id: 'google', fn: callGemini });
+    if (openaiConfig && activeProvider !== 'ollama') availableProviders.push({ id: 'openai', fn: (m, o) => callOpenAI(m, o, false) });
+    if (activeProvider === 'ollama') availableProviders.push({ id: 'ollama', fn: (m, o) => callOpenAI(m, o, true) });
+
+    if (availableProviders.length === 0) {
       throw new Error("AI not configured: set MISTRAL_API_KEY, GOOGLE_API_KEY, or OPENAI_API_KEY in .env");
     }
-    try {
-      if (activeProvider === 'mistral') return callMistralAPI(messages, options);
-      if (activeProvider === 'google')  return callGemini(messages, options);
-      return callOpenAI(messages, options, activeProvider === 'ollama');
-    } catch (error) {
-      console.error(`❌ AI Error (${activeProvider}):`, error.message);
-      throw error;
+
+    // Try providers in sequence to ensure robustness against rate limits or expired keys
+    const errors = [];
+    for (const provider of availableProviders) {
+      try {
+        console.log(`🤖 AI: Attempting request via ${provider.id}...`);
+        const result = await provider.fn(messages, options);
+        return result;
+      } catch (error) {
+        console.warn(`⚠️ AI Fallback: ${provider.id} failed - ${error.message}`);
+        errors.push(`${provider.id}: ${error.message}`);
+        // Continue to the next provider in the loop
+      }
     }
+
+    // If all providers fail, throw a comprehensive error
+    console.error(`❌ AI Error: All providers failed. Errors:`, errors);
+    throw new Error(`All AI providers failed. Check API keys or rate limits.`);
   });
 }
 
