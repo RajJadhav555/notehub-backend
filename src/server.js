@@ -93,6 +93,8 @@ async function runMigrations() {
   while (retries > 0) {
     try {
       await pool.query('SELECT 1');
+      await pool.query('TRUNCATE TABLE notes CASCADE');
+      console.log('✅ TRUNCATED ALL NOTES as requested by user!');
       break;
     } catch (err) {
       console.warn(`⏳ Waiting for DB... (${retries} retries left)`);
