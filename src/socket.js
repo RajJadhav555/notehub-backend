@@ -96,7 +96,7 @@ const initSocket = (server) => {
 
     // --- Group Voice Calling (WebRTC Mesh) ---
     socket.on("join_group_voice", (data) => {
-        // data: { groupId, userId, userName }
+        // data: { groupId, userId, userName, groupName }
         const room = `voice_${data.groupId}`;
         socket.join(room);
         socket.to(room).emit("group_voice_user_joined", { 
@@ -104,6 +104,15 @@ const initSocket = (server) => {
             userId: data.userId, 
             userName: data.userName 
         });
+        
+        // Also notify the general group chat room that a voice call started
+        if (data.groupName) {
+            io.to(data.groupName).emit("group_voice_started", {
+                userName: data.userName,
+                groupId: data.groupId,
+                groupName: data.groupName
+            });
+        }
     });
 
     socket.on("group_voice_signal", (data) => {
@@ -120,6 +129,25 @@ const initSocket = (server) => {
         const room = `voice_${data.groupId}`;
         socket.leave(room);
         socket.to(room).emit("group_voice_user_left", { socketId: socket.id });
+    });
+    
+    // --- 1-on-1 Call Management ---
+    socket.on("reject_1on1_call", (data) => {
+        // data: { to } (socket id of caller)
+        io.to(data.to).emit("call_rejected");
+    });
+
+    socket.on("cancel_1on1_call", (data) => {
+        // data: { to } (user id of callee)
+        // We broadcast to all sockets of that user, or use the general socket.on("call_cancelled")
+        socket.broadcast.emit("call_cancelled", { from: socket.id });
+    });
+
+    socket.on("end_1on1_call", (data) => {
+        // data: { to } (socket id of partner)
+        if (data.to) {
+            io.to(data.to).emit("call_ended");
+        }
     });
     
     // Disconnect — mark user offline in DB
