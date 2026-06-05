@@ -232,8 +232,21 @@ const initSocket = (server) => {
       
       // Broadcast disconnect for WebRTC Mesh teardown
       socket.broadcast.emit("group_voice_user_left", { socketId: socket.id });
-    });
   });
+
+  // Heartbeat: Update last_seen = NOW() for all online users every 1 minute
+  setInterval(() => {
+    const onlineIds = [];
+    for (const [uid, count] of activeUsers.entries()) {
+      if (count > 0 && uid && uid !== 'undefined') {
+        onlineIds.push(Number(uid));
+      }
+    }
+    if (onlineIds.length > 0) {
+      pool.query("UPDATE users SET last_seen = NOW() WHERE id = ANY($1)", [onlineIds])
+        .catch(err => console.error("Failed to update last_seen heartbeat:", err.message));
+    }
+  }, 60000);
   
   return io;
 };
