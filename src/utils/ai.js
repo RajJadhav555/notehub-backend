@@ -19,7 +19,7 @@ if (mistralKey) {
   mistralConfig = new OpenAI({
     apiKey: mistralKey,
     baseURL: 'https://api.mistral.ai/v1',
-    timeout: 30000, 
+    timeout: 120000, 
   });
   if (!activeProvider) activeProvider = 'mistral';
   console.log("🤖 AI: Mistral AI Provider initialized.");
@@ -32,7 +32,7 @@ if (googleKey) {
 }
 
 if (openaiKey) {
-  openaiConfig = new OpenAI({ apiKey: openaiKey, timeout: 30000 });
+  openaiConfig = new OpenAI({ apiKey: openaiKey, timeout: 120000 });
   if (!activeProvider) activeProvider = 'openai';
   console.log("🤖 AI: OpenAI Provider initialized.");
 }
