@@ -45,7 +45,7 @@ router.get('/collaborators', async (req, res) => {
       ) note_counts ON u.id = note_counts.uploader_id
       ORDER BY 
         CASE WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN 0 ELSE 1 END,
-        points DESC NULLS LAST,
+        base_points DESC NULLS LAST,
         u.name ASC
     `);
     
