@@ -32,7 +32,7 @@ router.get('/collaborators', async (req, res) => {
         COALESCE(note_counts.verified_count, 0) * 5 as base_points,
         COALESCE(note_counts.verified_count, 0) as uploads,
         CASE 
-          WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN true 
+          WHEN u.last_seen > NOW() - INTERVAL '5 minutes' THEN true 
           ELSE false 
         END as is_online,
         u.last_seen

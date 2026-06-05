@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
             ELSE 5 
           END, 1) as points,
         CASE 
-            WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN true 
+            WHEN u.last_seen > NOW() - INTERVAL '5 minutes' THEN true 
             ELSE false 
         END as is_online
        FROM leaderboard l

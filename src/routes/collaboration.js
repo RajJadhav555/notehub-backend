@@ -223,7 +223,7 @@ router.get('/groups/:id/members', async (req, res) => {
       SELECT 
         u.id, u.name, u.email, u.department,
         COALESCE(l.points, 0) as points,
-        CASE WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN true ELSE false END as is_online,
+        CASE WHEN u.last_seen > NOW() - INTERVAL '5 minutes' THEN true ELSE false END as is_online,
         sgm.joined_at
       FROM study_group_members sgm
       JOIN users u ON sgm.user_id = u.id
@@ -316,7 +316,7 @@ router.get('/partners', async (req, res) => {
       SELECT 
         u.id, u.name, u.email, u.department,
         COALESCE(note_counts.verified_count, 0) * 5 as points,
-        CASE WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN true ELSE false END as is_online
+        CASE WHEN u.last_seen > NOW() - INTERVAL '5 minutes' THEN true ELSE false END as is_online
       FROM users u
       LEFT JOIN (
         SELECT uploader_id, COUNT(*) as verified_count 
@@ -341,7 +341,7 @@ router.get('/students', async (req, res) => {
     const { excludeGroupId } = req.query;
     let query = `
       SELECT u.id, u.name, u.email, u.department,
-        CASE WHEN u.last_seen > NOW() - INTERVAL '2 minutes' THEN true ELSE false END as is_online
+        CASE WHEN u.last_seen > NOW() - INTERVAL '5 minutes' THEN true ELSE false END as is_online
       FROM users u
     `;
     const params = [];
