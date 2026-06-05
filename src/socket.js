@@ -109,14 +109,7 @@ const initSocket = (server) => {
             userName: data.userName 
         });
         
-        // Also notify the general group chat room that a voice call started
-        if (data.groupName) {
-            io.to(data.groupName).emit("group_voice_started", {
-                userName: data.userName,
-                groupId: data.groupId,
-                groupName: data.groupName
-            });
-        }
+        // The group voice started notification is now handled by the frontend sending a persistent message.
     });
 
     socket.on("group_voice_signal", (data) => {
