@@ -100,8 +100,8 @@ router.post("/chat", requireAuth, async (req, res) => {
 
         const apiKey = process.env.OPENAI_API_KEY;
         
-        // 1. Get Context from RAG (Deep Content) - SEARCHING ONLY VERIFIED NOTES
-        const contextDocs = await searchSimilar(message, 15, true); // verifiedOnly=true
+        // 1. Get Context from RAG (Deep Content) - SEARCHING ALL NOTES (Sync Uploads immediately)
+        const contextDocs = await searchSimilar(message, 15, false); // verifiedOnly=false
         let contextString = "";
         
         if (contextDocs.length > 0) {
