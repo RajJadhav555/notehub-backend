@@ -288,7 +288,6 @@ const initSocket = (server) => {
             phase: 'study', // 'study' or 'break'
             groupName: data.groupName,
             startedBy: data.userName || 'Someone',
-            isStrict: data.isStrict || false,
             intervalId: null
         };
 
@@ -314,8 +313,7 @@ const initSocket = (server) => {
                                 groupId: key,
                                 timeLeft: session.timeLeft,
                                 phase: session.phase,
-                                isRunning: session.isRunning,
-                                isStrict: session.isStrict
+                                isRunning: session.isRunning
                             });
                         }
                     }, 1000);
@@ -329,8 +327,7 @@ const initSocket = (server) => {
                 timeLeft: session.timeLeft,
                 duration: session.duration,
                 phase: session.phase,
-                isRunning: session.isRunning,
-                isStrict: session.isStrict
+                isRunning: session.isRunning
             });
         }, 1000);
 
@@ -340,8 +337,7 @@ const initSocket = (server) => {
             duration: session.duration,
             timeLeft: session.timeLeft,
             phase: session.phase,
-            startedBy: session.startedBy,
-            isStrict: session.isStrict
+            startedBy: session.startedBy
         });
     });
 
@@ -364,8 +360,7 @@ const initSocket = (server) => {
                 timeLeft: session.timeLeft,
                 duration: session.duration,
                 phase: session.phase,
-                isRunning: session.isRunning,
-                isStrict: session.isStrict
+                isRunning: session.isRunning
             });
         }
     });
