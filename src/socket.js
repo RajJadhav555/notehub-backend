@@ -45,6 +45,18 @@ const initSocket = (server) => {
       socket.to(room).emit("user_joined", socket.id);
     });
 
+    // Global synchronization events
+    socket.join('global_notifications');
+    
+    socket.on("group_update", () => {
+      socket.broadcast.emit("refresh_groups");
+    });
+
+    socket.on("group_member_update", (data) => {
+      socket.broadcast.emit("refresh_group_members", data);
+      socket.broadcast.emit("refresh_groups");
+    });
+
     // Handle chat messages
     socket.on("send_message", (data) => {
       io.to(data.room).emit("receive_message", data);
