@@ -92,7 +92,7 @@ async function callAI(_apiKey, messages, options = {}) {
 // ─── Mistral (OpenAI-compatible) ─────────────────────────────────────────────
 
 async function callMistralAPI(messages, options = {}) {
-  const model = options.model || 'mistral-large-latest';
+  const model = options.model || 'mistral-small-latest';
   const completion = await mistralConfig.chat.completions.create({
     model,
     messages,

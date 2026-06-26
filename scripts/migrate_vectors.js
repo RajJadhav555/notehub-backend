@@ -2,18 +2,22 @@ const { Pool } = require('pg');
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') }); // Load from root (Notehub/.env)
 
-const pool = new Pool({
-  user: process.env.POSTGRES_USER || 'notehub_user',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.POSTGRES_DB || 'notehub_database',
-  password: process.env.POSTGRES_PASSWORD || 'notehub_password_123',
-  port: process.env.DB_PORT || 5432,
-});
+const poolConfig = process.env.DATABASE_URL
+  ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+  : {
+      user: process.env.POSTGRES_USER || 'notehub_user',
+      host: process.env.DB_HOST || 'localhost',
+      database: process.env.POSTGRES_DB || 'notehub_database',
+      password: process.env.POSTGRES_PASSWORD || 'notehub_password_123',
+      port: process.env.DB_PORT || 5432,
+    };
+
+const pool = new Pool(poolConfig);
 
 async function migrate() {
   const client = await pool.connect();
   try {
-    console.log("🔄 Starting Vector Migration (1024 -> 1536)...");
+    console.log("🔄 Starting Vector Migration (1024)...");
     
     await client.query('BEGIN');
 
@@ -42,7 +46,7 @@ async function migrate() {
         note_id INTEGER REFERENCES notes(id) ON DELETE CASCADE,
         chunk_index INTEGER,
         content TEXT,
-        embedding vector(1536),
+        embedding vector(1024),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
