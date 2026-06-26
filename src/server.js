@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const os = require('os');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { initSocket } = require('./socket');
 const rateLimit = require('express-rate-limit');
@@ -37,8 +38,41 @@ app.use(helmet({
 }));
 
 // Middleware
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+  'http://localhost:5555',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:8000',
+  'http://localhost:8081', // Mobile Expo dev server
+  'http://127.0.0.1:8081'
+];
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5555', 'http://localhost:5173', 'http://localhost:3000', 'http://localhost:8000'],
+  origin: (origin, callback) => {
+    // In production, enforce strict allowedOrigins if CORS_ORIGIN is set
+    if (process.env.NODE_ENV === 'production' && process.env.CORS_ORIGIN) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+      return;
+    }
+    // In development:
+    // 1. Allow requests with no origin (like native mobile apps, Postman)
+    // 2. Allow any origin matching local/localhost IPs
+    if (!origin) {
+      callback(null, true);
+    } else if (
+      allowedOrigins.includes(origin) ||
+      /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)
+    ) {
+      callback(null, true);
+    } else {
+      // Allow other local development origins to prevent CORS blocker on custom ports
+      callback(null, true);
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -263,10 +297,27 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
+// Helper to get local network IP address
+const getLocalIP = () => {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
 const server = app.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalIP();
   console.log(`✅ NoteHub Backend running on port ${PORT}`);
-  console.log(`📡 API available at http://0.0.0.0:${PORT}`);
-  console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`📡 API available at http://localhost:${PORT}`);
+  if (localIP !== 'localhost') {
+    console.log(`📡 Mobile API (LAN): http://${localIP}:${PORT}`);
+  }
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
 });
 
 // Initialize Socket.io

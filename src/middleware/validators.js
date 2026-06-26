@@ -2,10 +2,40 @@ const { z } = require('zod');
 
 // ─── Schemas ────────────────────────────────────────────────────────
 
+const ALLOWED_EMAIL_DOMAINS = [
+  'gmail.com', 'outlook.com', 'yahoo.com', 'hotmail.com',
+  'icloud.com', 'live.com', 'protonmail.com', 'proton.me',
+  'zoho.com', 'gmx.com', 'aol.com', 'mail.com', 'yandex.com',
+  'notehub.com' // for developer/seed testing
+];
+
+function isValidEmailDomain(email) {
+  if (!email || typeof email !== 'string') return false;
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+  const domain = parts[1].toLowerCase().trim();
+  
+  if (ALLOWED_EMAIL_DOMAINS.includes(domain)) {
+    return true;
+  }
+  
+  // Allow academic/university email domains
+  if (domain.endsWith('.edu') || 
+      domain.endsWith('.edu.in') || 
+      domain.endsWith('.ac.in') || 
+      domain.endsWith('.res.in')) {
+    return true;
+  }
+  
+  return false;
+}
+
 const signupSchema = z.object({
   body: z.object({
     name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
-    email: z.string().email('Invalid email address'),
+    email: z.string()
+      .email('Invalid email address')
+      .refine(isValidEmailDomain, 'Only authentic email providers (gmail.com, outlook.com, etc.) or academic domains (.edu, .ac.in) are allowed'),
     password: z.string().min(6, 'Password must be at least 6 characters').max(128, 'Password too long'),
     department: z.string().max(100).optional(),
     semester: z.string().max(50).optional(),
@@ -14,7 +44,9 @@ const signupSchema = z.object({
 
 const loginSchema = z.object({
   body: z.object({
-    email: z.string().email('Invalid email address'),
+    email: z.string()
+      .email('Invalid email address')
+      .refine(isValidEmailDomain, 'Only authentic email providers or academic domains are allowed'),
     password: z.string().min(1, 'Password is required'),
   })
 });

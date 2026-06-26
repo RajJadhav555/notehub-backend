@@ -11,11 +11,39 @@ const activeVideoSessions = new Map();
 const activePomodoroSessions = new Map();
 
 const initSocket = (server) => {
-  const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
+  const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [
+    'http://localhost:5555',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://localhost:8081', // Mobile Expo dev server
+    'http://127.0.0.1:8081'
+  ];
   
   io = new Server(server, {
     cors: {
-      origin: allowedOrigins,
+      origin: (origin, callback) => {
+        // In production:
+        if (process.env.NODE_ENV === 'production' && process.env.CORS_ORIGIN) {
+          if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+          return;
+        }
+        // In development:
+        if (!origin) {
+          callback(null, true);
+        } else if (
+          allowedOrigins.includes(origin) ||
+          /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)
+        ) {
+          callback(null, true);
+        } else {
+          callback(null, true);
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
